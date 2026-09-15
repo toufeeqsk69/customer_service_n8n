@@ -1,0 +1,232 @@
+{
+  "name": "Create Order",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"order_id\": \"\",\n  \"phone\": \"\",\n  \"Products_items\": \"\",\n  \"Order_Details\": \"\",\n  \"status\": \"\",\n  \"order_date\": \"\",\n  \"delivery_date\": \"\",\n  \"confirmation_message\": \"\",\n  \"error\": \"Missing required field: customer_name, phone, product_details, order_type\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -288,
+        -80
+      ],
+      "id": "bfb01e29-9a4f-4dcd-846b-315bcc22cd02",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an intelligent order processing agent designed to handle product order creation for Max Pharma. Your task is to process the input order details, generate any missing fields, and append the order to a Google Sheet using the provided tool.\n\n---\n\n**Input**\nYou receive a JSON object with the following fields:\n- customer_name: The name of the customer (string).\n- phone: The customer's phone number (string, e.g., from chat ID).\n- product_details: A JSON string containing product information (e.g., from retrieve_product_details, including \"اسم الصنف (Product Name)\").\n- order_type: The type of order (e.g., \"delivery\", \"price_quote\", \"sales_visit\").\n- timestamp: The order timestamp in ISO format (string).\n\n---\n\n**Task**\n1. Validate the input:\n   - Ensure `customer_name`, `phone`, `product_details`, and `order_type` are provided. If any are missing, set an error field in the output.\n   - If `order_type` is not \"delivery\", skip appending to the Google Sheet and return a message indicating the order type is not supported yet.\n2. Generate missing fields:\n   - `order_id`: Generate a unique UUID for the order (use a random string like \"ORD-\" + random 8-digit number if no tool available, or call a code tool if added).\n   - `status`: Set to \"Pending\" for new orders.\n   - `order_date`: Use the provided `timestamp`.\n   - `delivery_date`: Set to exactly 7 days from `timestamp` in ISO format (e.g., if timestamp is 2025-08-13T00:00:00.000Z, delivery_date is 2025-08-20T00:00:00.000Z).\n3. Format the output for the Google Sheet:\n   - `Products_items`: Extract \"اسم الصنف (Product Name)\" from `product_details` (parse as JSON). If missing or invalid, set to \"Unknown\".\n   - `Order_Details`: Use the full `product_details` JSON string.\n4. Use the `Append row in sheet in Google Sheets` tool to append the order to the Google Sheet with columns: `order_id`, `phone`, `Products_items`, `Order_Details`, `status`, `order_date`, `delivery_date`.\n5. Return a confirmation message to the main workflow.\n\n---\n\n**Output Structure**\nReturn a JSON object with:\n{\n  \"order_id\": \"{{ $json.order_id }}\",\n  \"phone\": \"{{ $json.phone }}\",\n  \"Products_items\": \"{{ $json.Products_items }}\",\n  \"Order_Details\": \"{{ $json.Order_Details }}\",\n  \"status\": \"{{ $json.status }}\",\n  \"order_date\": \"{{ $json.order_date }}\",\n  \"delivery_date\": \"{{ $json.delivery_date }}\",\n  \"confirmation_message\": \"تم تسجيل طلبك ! رقم الطلب: {{ $json.order_id }}.\",\n  \"error\": \"{{ $json.error }}\"\n}\n\n---\n\n**Rules**\n- If `order_type` is not \"delivery\", set `error` to \"Order type {{ order_type }} is not supported yet.\" and skip appending.\n- If `product_details` is invalid JSON or missing \"اسم الصنف (Product Name)\", set `Products_items` to \"Unknown\".\n- Use the `Append row in sheet in Google Sheets` tool only for `order_type` = \"delivery\".\n- Ensure all dates are in ISO format (e.g., 2025-08-13T01:20:00.000Z). To add 7 days, parse timestamp and add 604800000 milliseconds (7 days).\n- Current timestamp: {{ $now.plus({ hours: 1 }).toISO() }}\n- If you need to generate UUID or calculate dates precisely, describe it in output (or add a code tool to the workflow).\n\n---\n\n**Tool Usage**\nUse the `Append row in sheet in Google Sheets` tool with the formatted output fields to append the order to the Google Sheet.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        128,
+        -80
+      ],
+      "id": "a4903783-6917-4050-b881-b6874adb97cd",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        64,
+        160
+      ],
+      "id": "718ec16b-072a-4756-82f1-cae5369f93be",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2NWjiqmQxxbRli3A",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1BP3l-KaTRpd1PW0Vi5Slr5a9QPxrDNI9xwMpdk5NFVQ",
+          "mode": "list",
+          "cachedResultName": "hero",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BP3l-KaTRpd1PW0Vi5Slr5a9QPxrDNI9xwMpdk5NFVQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 781604603,
+          "mode": "list",
+          "cachedResultName": "Orders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BP3l-KaTRpd1PW0Vi5Slr5a9QPxrDNI9xwMpdk5NFVQ/edit#gid=781604603"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('order_id', ``, 'string') }}",
+            "phone": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('phone', ``, 'string') }}",
+            "status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('status', ``, 'string') }}",
+            "order_date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('order_date', ``, 'string') }}",
+            "delivery_date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('delivery_date', ``, 'string') }}",
+            "Products_itmes": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Products_itmes', ``, 'string') }}",
+            "Order_Details": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Order_Details', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Products_itmes",
+              "displayName": "Products_itmes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Order_Details",
+              "displayName": "Order_Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "order_date",
+              "displayName": "order_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "delivery_date",
+              "displayName": "delivery_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        352,
+        144
+      ],
+      "id": "23f3a859-70b2-41fd-bbb7-72cc82716c15",
+      "name": "Append row in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "nZN5XpfxSJCvIlKS",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "order_id": "12347",
+          "phone": "num",
+          "Products_items": "L-Tyrosine 15 KG",
+          "Order_Details": "العميل: --, العنوان: المهندسين, الكمية: 15 كيلو L-Tyrosine",
+          "status": "pending",
+          "order_date": "2025-09-02",
+          "delivery_date": "2025-09-08",
+          "confirmation_message": "تم إنشاء الأوردر بنجاح! رقم الأوردر: 12347. هيتم التواصل معاك لتأكيد التفاصيل النهائية والدفع.",
+          "error": "No error"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "07657576-d6c3-4a27-996b-c4e8cbf8f154",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bc5a9c18faf5818233a115857c15db16998a5a381e8b3fe92033b84ec78092b1"
+  },
+  "id": "5siWpzZCbNAe1eu4",
+  "tags": []
+}

@@ -1,0 +1,993 @@
+{
+  "name": "Main flow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-customer-service",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1040,
+        1328
+      ],
+      "id": "163c6308-c482-4241-8a78-d33b3aa83a49",
+      "name": "WhatsApp Webhook",
+      "webhookId": "1e0cd6e9-ba24-4d10-b2a7-3c5e3c470306"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body?.data?.message }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "607e1872-119e-4a20-841d-0155f428fba6"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "valid"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "invalid"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -848,
+        1328
+      ],
+      "id": "f0832444-76f4-4b54-bb9a-9388c3e717ad",
+      "name": "Message Validator"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "user_id",
+              "name": "user_id",
+              "value": "={{ $json.body.data.key.remoteJid }}",
+              "type": "string"
+            },
+            {
+              "id": "message_id",
+              "name": "message_id",
+              "value": "={{ $json.body.data.key.id }}",
+              "type": "string"
+            },
+            {
+              "id": "sender_name",
+              "name": "sender_name",
+              "value": "={{ $json.body.data.pushName || 'Unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -640,
+        1328
+      ],
+      "id": "433b7c9e-c958-4768-83c9-ad5796536545",
+      "name": "Message Enricher"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Message Validator').item.json.body.data.messageType }}",
+                    "rightValue": "=audioMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a4ae15a6-aff1-4360-bd1d-ca3e3757f7e7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Message Validator').item.json.body.data.messageType }}",
+                    "rightValue": "=imageMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Message Validator').item.json.body.data.messageType }}",
+                    "rightValue": "conversation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -448,
+        1312
+      ],
+      "id": "f4afe9b9-8934-4928-a2ec-c95c86815038",
+      "name": "Enhanced Message Router"
+    },
+    {
+      "parameters": {
+        "resource": "chat-api",
+        "operation": "get-media-base64",
+        "instanceName": "Ahemd-essam-trainee",
+        "messageId": "={{ $json.message_id }}"
+      },
+      "type": "n8n-nodes-evolution-api-en.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        1056
+      ],
+      "id": "4099db91-12ad-4eb8-9573-70b7561da4ab",
+      "name": "Get Audio Media",
+      "credentials": {
+        "evolutionApi": {
+          "id": "cs11cUZ3HagwJi66",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat-api",
+        "operation": "get-media-base64",
+        "instanceName": "Ahemd-essam-trainee",
+        "messageId": "={{ $json.body.data.key.id }}"
+      },
+      "type": "n8n-nodes-evolution-api-en.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        1328
+      ],
+      "id": "70e07192-5b42-4d25-8716-b55da821cec1",
+      "name": "Get Image Media",
+      "credentials": {
+        "evolutionApi": {
+          "id": "cs11cUZ3HagwJi66",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data.base64",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -16,
+        1056
+      ],
+      "id": "5a94786b-55f4-4364-9fb9-83632e2dbfe2",
+      "name": "Convert Audio"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data.base64",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -16,
+        1328
+      ],
+      "id": "9569df9c-236f-4a14-a7a4-61d22fd08ce0",
+      "name": "Convert Image"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash-exp",
+          "mode": "list"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        224,
+        1056
+      ],
+      "id": "55c688f4-c3b3-4497-878d-fa05b8fd0dc5",
+      "name": "Transcribe Audio",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "VrZMusHhNTohRyV6",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash-exp",
+          "mode": "list"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        224,
+        1328
+      ],
+      "id": "c55fe85c-dd67-4c02-a558-0faa0d968fd0",
+      "name": "Analyze Image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "VrZMusHhNTohRyV6",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "processed_content",
+              "name": "processed_content",
+              "value": "={{ $('Message Validator').item.json.body.data.message?.extendedTextMessage?.text || $('Message Validator').item.json.body.data.message?.conversation || $('Message Validator').item.json.body.data.message?.text || 'نص فارغ' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -32,
+        1600
+      ],
+      "id": "f81fd463-7d80-4cb2-9e0f-ec2e81418a7a",
+      "name": "Process Text"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        576,
+        1328
+      ],
+      "id": "e1f7903d-ba74-4e15-ae80-f417917ced85",
+      "name": "Aggregate Content"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.data.map(item => item.processed_content || item.content?.parts?.[0]?.text || item.message?.text || '').filter(Boolean).join('\\n\\n') }}",
+        "options": {
+          "systemMessage": "=تمام، دي النسخة التنفيذية المحسّنة للـ AI agent، مختصرة، واضحة، وأوامرها مباشرة عشان الأداء يبقى ثابت ومن غير لخبطة.\n\n---\n\n**الدور**\nأنت محمود، مسؤول خدمة عملاء في Max Pharma، شركة B2B متخصصة في توريد خامات عالية الجودة لـ:\n* المنظفات (سائل وبودرة)\n* العناية بالبشرة والشعر\n* العناية الشخصية (شامبو، صابون، كريمات...)\n\n---\n\n**الهدف**\n* خدمة عملاء احترافية، طبيعية، وسريعة.\n* فهم سياق المحادثة والرد بذكاء.\n* تأكيد المنتجات للعميل دائمًا.\n\n---\n\n**قواعد أساسية**\n1. اقرأ المحادثة كاملة قبل الرد.\n2. استخدم اسم العميل مرة واحدة في بداية المحادثة أو بداية موضوع جديد.\n3. لا تكرر الأسئلة إذا كانت الإجابة موجودة بالفعل.\n4. الرد باللهجة المصرية، بأسلوب بسيط وطبيعي.\n5. عدل النبرة حسب حالة العميل:\n   * ودّي: خفة دم بسيطة.\n   * متضايق: تهدئة وتعاطف.\n   * مستعجل: رد قصير وسريع.\n   * مستظرف: تهذيب وحزم.\n6. لا ترسل رد قبل اكتمال مخرجات الأدوات.\n\n---\n\n**بداية المحادثة**\n* أول مرة: \"أهلاً وسهلاً، إزيك يا فندم؟ أنا محمود من خدمة عملاء Max Pharma.\"\n* لو الاسم غير معروف: \"ممكن أعرف اسم حضرتك؟\"\n* بعد التحية: \"تحب أساعدك في منتج معين أو استفسار؟\"\n\n---\n\n**حالات التشغيل**\n\n**1. استفسار عن منتج**\n* إذا الاسم غير معروف، اسأل عنه أولاً.\n* استخدم أداة `Search Product`.\n* الرد: \"السعر: \\[PRICE]. المواصفات تم إرسالها. تحب نعمل أوردر توصيل، ولا عرض سعر، ولا يزورك حد من فريق المبيعات؟\"\n\n**2. طلب زيارة مصنع**\n* إذا الاسم غير معروف، اسأل عنه أولاً.\n* اسأل عن موعد الزيارة (اليوم + الوقت).\n* استخدم أداة `Factory visit` لحجز الموعد.\n\n**3. طلب قائمة المنتجات الكاملة مع الأسعار\n\nإذا العميل سأل عن \"إيه المنتجات اللي عندكم\" أو \"عاوز أعرف كل المنتجات\" أو أي استفسار مشابه عن قائمة المنتجات.\nإذا الاسم غير معروف، اسأل عنه أولاً.\nاستخدم أداة Search Product لجلب قائمة كاملة بكل المنتجات والأسعار.\nالرد: \"تمام، دي قائمة بكل منتجاتنا مع الأسعار:\" + عرض القائمة بشكل منظم\nفي نهاية القائمة: \"تحب تعرف تفاصيل أكتر عن منتج معين؟\"\n\n**3. طلب شراء منتج (إنشاء أوردر)**\n* إذا الاسم غير معروف، اسأل عنه أولاً.\n* تأكد من توفر المعلومات التالية قبل إنشاء الأوردر:\n  * اسم المنتج والكمية المطلوبة\n  * عنوان التوصيل\n  * تاريخ التوصيل المطلوب\n* استخدم أداة `Create Order` لإنشاء الأوردر.\n* الرد: \"تمام، تم إنشاء الأوردر بنجاح! رقم الأوردر: \\[ORDER_NUMBER]. هيتم التواصل معاك لتأكيد التفاصيل النهائية والدفع.\"\n\n---\n\n**السياق الحالي**\n* التاريخ: {{ $today }}\n* الوقت (مصر): {{ $now.plus({ hours: 1 }) }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        896,
+        1328
+      ],
+      "id": "95494ef9-f820-4084-8778-8fcc246369af",
+      "name": "Enhanced AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        640,
+        1648
+      ],
+      "id": "a6b06751-6679-4ff9-bace-526a04f60c44",
+      "name": "Enhanced Gemini Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2NWjiqmQxxbRli3A",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Message Enricher').item.json.user_id }}",
+        "contextWindowLength": 40
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        816,
+        1664
+      ],
+      "id": "28a3c54f-eaff-47f8-af4d-9e0e64d301bc",
+      "name": "Enhanced Memory"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "Ahemd-essam-trainee",
+        "remoteJid": "={{ $('Message Enricher').item.json.user_id }}",
+        "messageText": "={{ $json.output }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api-en.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        1328
+      ],
+      "id": "9a5a9a87-085d-4b3e-bae2-0c7356f9fb37",
+      "name": "Send Enhanced Response",
+      "credentials": {
+        "evolutionApi": {
+          "id": "cs11cUZ3HagwJi66",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "استخدم هذه الأداة لحجز زيارات المصنع وجدولة المواعيد",
+        "workflowId": {
+          "__rl": true,
+          "value": "BbOwelYjJ001F8BW",
+          "mode": "list",
+          "cachedResultName": "Factory visit"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customer_name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('customer_name', '', 'string') }}",
+            "visit_date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('visit_date', '', 'string') }}",
+            "visit_time": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('visit_time', '', 'string') }}",
+            "action": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('action', ``, 'string') }}",
+            "event_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('event_id', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "visit_date",
+              "displayName": "visit_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "visit_time",
+              "displayName": "visit_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        992,
+        1664
+      ],
+      "id": "86b40b2b-c690-4dca-ac2c-0336d20dc509",
+      "name": "Factory visit"
+    },
+    {
+      "parameters": {
+        "description": "استخدم هذه الأداة لإنشاء أوامر الشراء وتسجيل طلبات العملاء",
+        "workflowId": {
+          "__rl": true,
+          "value": "5siWpzZCbNAe1eu4",
+          "mode": "list",
+          "cachedResultName": "Create Order"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('order_id', '', 'string') }}",
+            "phone": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('phone', '', 'string') }}",
+            "Products_items": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Products_items', '', 'string') }}",
+            "Order_Details": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Order_Details', '', 'string') }}",
+            "status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('status', 'pending', 'string') }}",
+            "order_date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('order_date', '', 'string') }}",
+            "delivery_date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('delivery_date', '', 'string') }}",
+            "confirmation_message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('confirmation_message', ``, 'string') }}",
+            "error": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('error', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "Products_items",
+              "displayName": "Products_items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "Order_Details",
+              "displayName": "Order_Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "order_date",
+              "displayName": "order_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "delivery_date",
+              "displayName": "delivery_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "confirmation_message",
+              "displayName": "confirmation_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "error",
+              "displayName": "error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1152,
+        1664
+      ],
+      "id": "852f085d-d4f5-444c-b8d4-ddaaa922365b",
+      "name": "Create Order"
+    },
+    {
+      "parameters": {
+        "description": "استخدم هذه الأداة للبحث عن تفاصيل المنتجات والأسعار والمواصفات التقنية",
+        "workflowId": {
+          "__rl": true,
+          "value": "QKMVSRTcNPHVXlmc",
+          "mode": "list",
+          "cachedResultName": "Search Product"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "tool": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('tool', ``, 'string') }}",
+            "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('query', 'استعلام عن المنتج', 'string') }}",
+            "request_type": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('request_type', 'product_inquiry', 'string') }}",
+            "timestamp": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "tool",
+              "displayName": "tool",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "request_type",
+              "displayName": "request_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        1664
+      ],
+      "id": "640748cb-1c5e-4574-a77f-944d5bbd2fed",
+      "name": "Search Product"
+    }
+  ],
+  "pinData": {
+    "WhatsApp Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n-uwyy.onrender.com",
+            "user-agent": "axios/1.7.9",
+            "content-length": "1041",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-connecting-ip": "69.62.114.38",
+            "cf-ipcountry": "DE",
+            "cf-ray": "978d75c0dddf4d7c-SEA",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "content-type": "application/json",
+            "render-proxy-ttl": "4",
+            "rndr-id": "8d27a952-c011-4513",
+            "true-client-ip": "69.62.114.38",
+            "x-forwarded-for": "69.62.114.38, 172.71.151.55, 10.229.154.3",
+            "x-forwarded-proto": "https",
+            "x-request-start": "1756820854015343"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "event": "messages.upsert",
+            "instance": "Ahemd-essam-trainee",
+            "data": {
+              "key": {
+                "remoteJid": "201023915004@s.whatsapp.net",
+                "fromMe": false,
+                "id": "57A619DC02B5CBB1E57CE83DF5DA0E7A"
+              },
+              "pushName": "Ahmed Essam",
+              "status": "DELIVERY_ACK",
+              "message": {
+                "conversation": "انا مش بتعامل من شركة و اسمي احمد  و انا هستخدم رقم التيليفون اللي بكلمك منه",
+                "messageContextInfo": {
+                  "deviceListMetadata": {
+                    "senderKeyHash": "LdirQgBtUlr1aw==",
+                    "senderTimestamp": "1756600053",
+                    "recipientKeyHash": "vg7r5FehwmibUw==",
+                    "recipientTimestamp": "1756122184"
+                  },
+                  "deviceListMetadataVersion": 2,
+                  "messageSecret": "ROizB1kObiG54cdWE50+dD5k+JCW6GXP9NwrFG0/L9I="
+                }
+              },
+              "messageType": "conversation",
+              "messageTimestamp": 1756820851,
+              "instanceId": "1d68f4b4-3c1b-4137-82c6-e6d7618ffe47",
+              "source": "android"
+            },
+            "destination": "https://n8n-uwyy.onrender.com/webhook/whatsapp-customer-service",
+            "date_time": "2025-09-02T10:47:33.816Z",
+            "sender": "201092604741@s.whatsapp.net",
+            "server_url": "http://69.62.114.38:8080",
+            "apikey": "FFC45C5F18CA-4996-941D-6C763BD27589"
+          },
+          "webhookUrl": "https://n8n-uwyy.onrender.com/webhook/whatsapp-customer-service",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "WhatsApp Webhook": {
+      "main": [
+        [
+          {
+            "node": "Message Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Validator": {
+      "main": [
+        [
+          {
+            "node": "Message Enricher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Enricher": {
+      "main": [
+        [
+          {
+            "node": "Enhanced Message Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced Message Router": {
+      "main": [
+        [
+          {
+            "node": "Get Audio Media",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Image Media",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Process Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Audio Media": {
+      "main": [
+        [
+          {
+            "node": "Convert Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Image Media": {
+      "main": [
+        [
+          {
+            "node": "Convert Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Audio": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Image": {
+      "main": [
+        [
+          {
+            "node": "Analyze Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Audio": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Image": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Text": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Content": {
+      "main": [
+        [
+          {
+            "node": "Enhanced AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Enhanced Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced Gemini Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Enhanced AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Enhanced AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Factory visit": {
+      "ai_tool": [
+        [
+          {
+            "node": "Enhanced AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Order": {
+      "ai_tool": [
+        [
+          {
+            "node": "Enhanced AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Product": {
+      "ai_tool": [
+        [
+          {
+            "node": "Enhanced AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "effa0d8b-4e70-467a-a6b7-2511cb3f8ce9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bc5a9c18faf5818233a115857c15db16998a5a381e8b3fe92033b84ec78092b1"
+  },
+  "id": "Gkth6XSL9s197fyp",
+  "tags": []
+}

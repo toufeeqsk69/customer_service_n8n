@@ -1,0 +1,195 @@
+{
+  "name": "Search Product",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"tool\": \"retrieve_product_details\",\n    \"query\": \"{{ $json.product_query || 'حمض ستيريك' }}\",\n    \"request_type\": \"product_inquiry\",\n    \"timestamp\": \"{{ $now.plus({ hours: 1 }).toISO() }}\"\n  \n}"
+      },
+      "id": "d0acf5f7-f62c-4250-b434-a74f858dcb56",
+      "typeVersion": 1.1,
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -176,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "You are an intelligent retrieval agent designed to interpret user search queries and return the most relevant product information. Follow this process:\n\nInput Handling: Accept a natural language search query from the user describing a product they are looking for.\n\nProduct Name Retrieval: Use the get_all_names_products tool to retrieve a comprehensive list of all available product names.\n\nRelevance Matching: Analyze the user query and compare it against the retrieved product names. Identify the product that most closely matches the intent of the query with high confidence. Use semantic similarity, keyword relevance, and contextual clues to determine the best match.\n\nFetch Product Details: Once a high-probability match is identified, use the get_product_details tool to retrieve and return detailed information about that specific product.\n\nEnsure accuracy and precision at each step to deliver the most relevant and complete product information to the user.\n\noutput structure to the main agent:\n{\n  \"user_query\": \"{{ $json.query }}\",\n  \"retrieved_product_names\": {{ JSON.stringify($input.all().find(item => item.json.data).json.data.map(row => row['اسم الصنف (Product Name)'])) }},\n  \"matched_product\": {\n    \"name\": \"{{ $input.item.json.matchedProduct || '' }}\",\n    \"match_score\": {{ $input.item.json.score || 0 }},\n    \"matched_keywords\": {{ JSON.stringify($input.item.json.query.split(' ')) }}\n  },\n  \"product_details_request\": {\n    \"tool\": \"get_product_details\",\n    \"parameters\": {\n      \"product_name\": \"{{ $input.item.json.matchedProduct || '' }}\",\n      \"request_type\": \"product_lookup\",\n      \"timestamp\": \"{{ $now.plus({ hours: 1 }).toISO() }}\"\n    }\n  },\n  \"product_details_response\": {{ $input.all().find(item => item.json.data && item.json.data[0] && item.json.data[0]['اسم الصنف (Product Name)']) ? JSON.stringify($input.all().find(item => item.json.data && item.json.data[0]).json.data[0]) : {} }},\n  \"error\": \"{{ $input.item.json.error || '' }}\"\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        144,
+        -64
+      ],
+      "id": "4078f2de-19cd-424f-ab45-16649be48666",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        48,
+        192
+      ],
+      "id": "782d8046-9c05-4efa-8d63-abac4c626576",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2NWjiqmQxxbRli3A",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1BP3l-KaTRpd1PW0Vi5Slr5a9QPxrDNI9xwMpdk5NFVQ",
+          "mode": "list",
+          "cachedResultName": "hero",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BP3l-KaTRpd1PW0Vi5Slr5a9QPxrDNI9xwMpdk5NFVQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 547769348,
+          "mode": "list",
+          "cachedResultName": "Products",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BP3l-KaTRpd1PW0Vi5Slr5a9QPxrDNI9xwMpdk5NFVQ/edit#gid=547769348"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRangeA1",
+              "range": "B:B"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        272,
+        192
+      ],
+      "id": "e679563b-3417-4c6c-97d9-12bcd274a06b",
+      "name": "get_all_names_products",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "nZN5XpfxSJCvIlKS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1BP3l-KaTRpd1PW0Vi5Slr5a9QPxrDNI9xwMpdk5NFVQ",
+          "mode": "list",
+          "cachedResultName": "hero",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BP3l-KaTRpd1PW0Vi5Slr5a9QPxrDNI9xwMpdk5NFVQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 547769348,
+          "mode": "list",
+          "cachedResultName": "Products",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BP3l-KaTRpd1PW0Vi5Slr5a9QPxrDNI9xwMpdk5NFVQ/edit#gid=547769348"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "اسم الصنف (Product Name)",
+              "lookupValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('values0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        512,
+        192
+      ],
+      "id": "b67cee7d-14aa-42fa-8796-136db76c4269",
+      "name": "get_product_details",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "nZN5XpfxSJCvIlKS",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_all_names_products": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_product_details": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "75520b64-accd-46af-bc98-42fad2c0e8ee",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bc5a9c18faf5818233a115857c15db16998a5a381e8b3fe92033b84ec78092b1"
+  },
+  "id": "QKMVSRTcNPHVXlmc",
+  "tags": []
+}
